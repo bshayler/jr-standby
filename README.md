@@ -28,7 +28,7 @@ All data lives in `data/lines.json` and is shared by the web page and the iOS ta
 | Yamatoji 大和路線 | Q | Q17 JR Namba to Q39 Kamo (Q35 is unused) |
 | Hanwa 阪和線 | R | R20 Tennoji to R54 Wakayama |
 
-Station numbers and kanji for every line were checked against the station tables on English Wikipedia (JR East lines on 2026-11-26, Kansai lines the same day). The hiragana readings and line colours were added by hand and have not been checked. Fix `data/lines.json` if anything is off. To add a line, append an entry in the same format (`[kanji, kana, romaji, number]` per station), then run `python3 tools/build.py`.
+Station numbers and kanji for every line were checked against the station tables on English Wikipedia (JR East lines on 2026-11-26, Kansai lines the same day). The hiragana readings were converted to romaji and compared with the verified romaji (one typo fixed, Izumi-Sunagawa). The line colours were added by hand and have not been checked. Fix `data/lines.json` if anything is off. To add a line, append an entry in the same format (`[kanji, kana, romaji, number]` per station), then run `python3 tools/build.py`.
 
 ## Web
 
@@ -58,6 +58,12 @@ Notes on StandBy:
 - StandBy removes the widget background and, in Night Mode, tints everything red. The sign switches to black when the background is removed.
 - Ride mode pre-computes the next 12 hours of stations as timeline entries, so the sign moves along the line without waking the app.
 - The app has a full-screen mode that keeps the display awake, if you want the wide sign instead of a widget.
+
+## Deploy
+
+**Web (GitHub Pages).** In the repo, open Settings, then Pages, set Source to "Deploy from a branch", branch `main`, folder `/ (root)`. The sign is then at `https://<user>.github.io/jr-standby/` (the root page redirects to `web/`). Pages on a free account needs a public repo. On the iPhone or iPad, open that URL in Safari, tap Share, then Add to Home Screen. Launched from the Home Screen it runs full screen with no Safari bar. After editing `data/lines.json`, run `python3 tools/build.py` and commit `web/lines.js` too.
+
+**iOS (device install).** Run `xcodegen`, open the project, pick your team under Signing & Capabilities on both targets, plug in the device and press Run. A free Apple ID works but the install expires after 7 days. For a longer-lived install use a paid developer account and TestFlight.
 
 ## Layout
 

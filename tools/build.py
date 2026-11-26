@@ -16,5 +16,10 @@ if "--standalone" in sys.argv:
     out = pathlib.Path(sys.argv[sys.argv.index("--standalone") + 1])
     page = (root / "web" / "index.html").read_text(encoding="utf-8")
     page = page.replace('<script src="lines.js"></script>', "<script>" + js + "</script>")
+    # The artifact viewer supplies its own document skeleton, so drop the wrapper used for real hosting.
+    import re
+    page = re.sub(r"<!--HOST-->.*?<!--/HOST-->\n", "", page, flags=re.S)
+    for tag in ("<!doctype html>\n", '<html lang="en">\n', "<head>\n", "</head>\n<body>", "\n</body>\n</html>\n"):
+        page = page.replace(tag, "")
     out.write_text(page, encoding="utf-8")
     print("wrote", out)
