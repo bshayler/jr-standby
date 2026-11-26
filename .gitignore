@@ -1,0 +1,7 @@
+.DS_Store
+*.xcodeproj
+xcuserdata/
+DerivedData/
+build/
+ios/Ekimei/App/Info.plist
+ios/Ekimei/Widget/Info.plist

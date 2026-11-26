@@ -1,0 +1,381 @@
+<title>Ekimei</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700&family=Noto+Sans+JP:wght@500;700;900&display=swap">
+<style>
+  /* Layout: one full-bleed station sign. Header (clock, line mark), centred station name in kanji / kana / romaji,
+     then the line-coloured band with the arrow, previous and next stations under its ends. */
+  :root {
+    --paper: #ffffff;
+    --ink: #0e0f0d;
+    --muted: #5d625b;
+    --rule: #0e0f0d;
+    --panel: #f2f3ef;
+    --panel-ink: #151613;
+    --field: #ffffff;
+    --field-line: #c9ccc4;
+    --accent: #1f6f43;
+    --band: #80c241;
+    --jp: "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    --lat: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #000000; --ink: #ffffff; --muted: #a7aca4; --rule: #ffffff;
+      --panel: #1b1c1a; --panel-ink: #f1f2ee; --field: #0d0e0c; --field-line: #44473f; --accent: #8fd6a6;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #000000; --ink: #ffffff; --muted: #a7aca4; --rule: #ffffff;
+    --panel: #1b1c1a; --panel-ink: #f1f2ee; --field: #0d0e0c; --field-line: #44473f; --accent: #8fd6a6;
+    color-scheme: dark;
+  }
+
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--jp);
+    overflow: hidden;
+    -webkit-user-select: none; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .sign { container-type: size; width: 100%; height: 100%; cursor: pointer; outline-offset: -4px; }
+  .board {
+    --u: min(1cqw, 1.7cqh);
+    box-sizing: border-box;
+    height: 100%;
+    display: flex; flex-direction: column;
+    padding-block: calc(var(--u) * 3);
+    padding-left: max(16px, env(safe-area-inset-left, 0px), calc(var(--u) * 4));
+    padding-right: max(16px, env(safe-area-inset-right, 0px), calc(var(--u) * 4));
+    gap: calc(var(--u) * 1.5);
+  }
+
+  .head { display: flex; justify-content: space-between; align-items: center; height: calc(var(--u) * 6); }
+  .clock { display: flex; align-items: baseline; gap: calc(var(--u) * .6); font-family: var(--lat); font-weight: 700;
+           font-size: calc(var(--u) * 5.4); letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1; }
+  .clock small { font-size: calc(var(--u) * 1.8); font-weight: 700; letter-spacing: .04em; color: var(--muted); }
+  .marks { display: flex; align-items: center; gap: calc(var(--u) * 1.4); }
+  .linebox {
+    box-sizing: border-box; width: calc(var(--u) * 6); height: calc(var(--u) * 6);
+    border: calc(var(--u) * .45) solid var(--ink); border-radius: calc(var(--u) * .5);
+    display: grid; place-items: center; font-weight: 900; font-size: calc(var(--u) * 3.8); line-height: 1;
+  }
+  .code {
+    box-sizing: border-box; width: calc(var(--u) * 6); height: calc(var(--u) * 6); border-radius: 50%;
+    border: calc(var(--u) * .45) solid var(--band);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-family: var(--lat); font-weight: 700; line-height: 1; gap: calc(var(--u) * .1);
+  }
+  .code b { font-size: calc(var(--u) * 1.7); letter-spacing: .02em; }
+  .code span { font-size: calc(var(--u) * 2.6); font-variant-numeric: tabular-nums; }
+
+  .name { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: calc(var(--u) * .8); }
+  .kanji { font-weight: 900; font-size: calc(var(--u) * var(--k, 14)); line-height: 1.05; letter-spacing: .02em; white-space: nowrap; }
+  .kana { font-weight: 500; font-size: calc(var(--u) * var(--h, 4.5)); line-height: 1; letter-spacing: .12em; color: var(--ink); white-space: nowrap; }
+  .romaji { font-family: var(--lat); font-weight: 700; font-size: calc(var(--u) * var(--r, 7.5)); line-height: 1.05; letter-spacing: -.01em; white-space: nowrap; }
+
+  .strip { position: relative; }
+  .band {
+    height: calc(var(--u) * 7); background: var(--band);
+    --tip: calc(var(--u) * 7);
+    clip-path: polygon(0 0, calc(100% - var(--tip)) 0, 100% 50%, calc(100% - var(--tip)) 100%, 0 100%);
+    display: flex; align-items: stretch;
+  }
+  .band .here { width: calc(var(--u) * 7); margin-left: 50%; transform: translateX(-50%); background: color-mix(in srgb, var(--band) 55%, white); }
+  .band.flip { clip-path: polygon(var(--tip) 0, 100% 0, 100% 100%, var(--tip) 100%, 0 50%); }
+
+  .near { display: flex; justify-content: space-between; gap: calc(var(--u) * 3); margin-top: calc(var(--u) * 1); min-height: calc(var(--u) * 5.5); }
+  .nb { display: flex; flex-direction: column; gap: calc(var(--u) * .2); min-width: 0; }
+  .nb.r { align-items: flex-end; text-align: right; }
+  .nb .k { font-weight: 700; font-size: calc(var(--u) * 3); line-height: 1.1; white-space: nowrap; }
+  .nb .l { font-family: var(--lat); font-weight: 500; font-size: calc(var(--u) * 2.1); line-height: 1.1; color: var(--muted); white-space: nowrap; }
+
+  .hint {
+    position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); transform: translateX(-50%);
+    font-family: var(--lat); font-size: 12px; font-weight: 500; color: var(--muted);
+    background: color-mix(in srgb, var(--paper) 85%, var(--muted)); padding: 4px 10px; border-radius: 99px;
+    transition: opacity .6s; pointer-events: none;
+  }
+  .hint.gone { opacity: 0; }
+
+  /* settings sheet */
+  .sheet {
+    position: fixed; inset: auto 0 0 0; max-height: 86%; overflow-y: auto; box-sizing: border-box;
+    background: var(--panel); color: var(--panel-ink); font-family: var(--lat);
+    border-radius: 16px 16px 0 0; box-shadow: 0 -8px 40px rgba(0,0,0,.35);
+    padding: 16px max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 20px) max(16px, env(safe-area-inset-left, 0px));
+    -webkit-user-select: text; user-select: text; cursor: auto;
+  }
+  .sheet .inner { max-width: 760px; margin-inline: auto; display: grid; gap: 14px; }
+  .sheet h2 { margin: 0; font-size: 15px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  label, .lab { display: grid; gap: 5px; font-size: 12px; font-weight: 500; color: color-mix(in srgb, var(--panel-ink) 70%, transparent); min-width: 0; }
+  select, input[type="text"] {
+    font: inherit; font-size: 15px; color: var(--panel-ink); background: var(--field); border: 1px solid var(--field-line);
+    border-radius: 8px; padding: 9px 10px; min-width: 0; width: 100%; box-sizing: border-box;
+  }
+  input[type="color"] { width: 100%; height: 40px; padding: 2px; background: var(--field); border: 1px solid var(--field-line); border-radius: 8px; box-sizing: border-box; }
+  .seg { display: flex; border: 1px solid var(--field-line); border-radius: 8px; overflow: hidden; }
+  .seg button { flex: 1; font: inherit; font-size: 14px; padding: 9px 6px; border: 0; background: var(--field); color: var(--panel-ink); cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--field-line); }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: var(--paper); font-weight: 700; }
+  button.plain { font: inherit; font-size: 14px; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--field-line); background: var(--field); color: var(--panel-ink); cursor: pointer; }
+  button:focus-visible, select:focus-visible, input:focus-visible, .sign:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .check { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--panel-ink); }
+  .tip { font-size: 12px; line-height: 1.5; color: color-mix(in srgb, var(--panel-ink) 70%, transparent); margin: 0; }
+  .custom { display: grid; gap: 12px; border-top: 1px solid var(--field-line); padding-top: 12px; }
+
+  @media (prefers-reduced-motion: reduce) { .hint { transition: none; } }
+</style>
+
+<main id="sign" class="sign" role="button" tabindex="0" aria-label="Station sign. Press to open settings.">
+  <div class="board">
+    <div class="head">
+      <div class="clock"><span id="time">00:00</span><small id="ampm"></small></div>
+      <div class="marks">
+        <div class="code" id="codeMark"><b id="codeLine">JY</b><span id="codeNum">20</span></div>
+        <div class="linebox" id="lineChar">山</div>
+      </div>
+    </div>
+
+    <div class="name">
+      <div class="kanji" id="kanji">渋谷</div>
+      <div class="kana" id="kana">しぶや</div>
+      <div class="romaji" id="romaji">Shibuya</div>
+    </div>
+
+    <div class="strip">
+      <div class="band" id="band"><div class="here"></div></div>
+      <div class="near">
+        <div class="nb" id="nbL"><div class="k" id="lk">恵比寿</div><div class="l" id="ll">Ebisu</div></div>
+        <div class="nb r" id="nbR"><div class="k" id="rk">原宿</div><div class="l" id="rl">Harajuku</div></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="hint" id="hint">Tap the sign for settings</div>
+
+<section class="sheet" id="sheet" hidden aria-label="Settings">
+  <div class="inner">
+    <h2>Sign settings <button class="plain" id="closeBtn" type="button">Done</button></h2>
+
+    <div class="grid">
+      <label for="lineSel">Line
+        <select id="lineSel"></select>
+      </label>
+      <label for="stSel">Station
+        <select id="stSel"></select>
+      </label>
+    </div>
+
+    <div class="grid">
+      <div class="lab">Direction of travel
+        <div class="row"><button class="plain" id="swapBtn" type="button">Swap left / right</button></div>
+      </div>
+      <label for="advSel">Ride mode (moves to the next station)
+        <select id="advSel">
+          <option value="0">Off</option>
+          <option value="1">Every 1 minute</option>
+          <option value="2">Every 2 minutes</option>
+          <option value="5">Every 5 minutes</option>
+          <option value="15">Every 15 minutes</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="grid">
+      <div class="lab">Appearance
+        <div class="seg" id="themeSeg">
+          <button type="button" data-v="auto" aria-pressed="true">Auto</button>
+          <button type="button" data-v="light" aria-pressed="false">Light</button>
+          <button type="button" data-v="dark" aria-pressed="false">Dark</button>
+        </div>
+      </div>
+      <div class="lab">Clock
+        <div class="seg" id="clockSeg">
+          <button type="button" data-v="24" aria-pressed="true">24 hour</button>
+          <button type="button" data-v="12" aria-pressed="false">12 hour</button>
+        </div>
+      </div>
+    </div>
+
+    <label class="check"><input type="checkbox" id="awake"> Keep the screen awake while this page is open</label>
+
+    <div class="custom" id="customBox" hidden>
+      <div class="grid">
+        <label for="cLine">Line character <input type="text" id="cLine" maxlength="2"></label>
+        <label for="cPre">Code letters <input type="text" id="cPre" maxlength="3"></label>
+        <label for="cNum">Station number <input type="text" id="cNum" maxlength="3"></label>
+        <label for="cCol">Line colour <input type="color" id="cCol"></label>
+      </div>
+      <div class="grid">
+        <label for="cK">Station (kanji) <input type="text" id="cK"></label>
+        <label for="cH">Reading (kana) <input type="text" id="cH"></label>
+        <label for="cR">Romaji <input type="text" id="cR"></label>
+      </div>
+      <div class="grid">
+        <label for="pK">Previous station (kanji) <input type="text" id="pK"></label>
+        <label for="pR">Previous station (romaji) <input type="text" id="pR"></label>
+        <label for="nK">Next station (kanji) <input type="text" id="nK"></label>
+        <label for="nR">Next station (romaji) <input type="text" id="nR"></label>
+      </div>
+    </div>
+
+    <p class="tip">Add this page to your Home Screen (Share, then Add to Home Screen), turn the phone or iPad to landscape, and set Auto-Lock to Never or use Guided Access so it stays lit on the charger.</p>
+  </div>
+</section>
+
+<script src="lines.js"></script>
+<script>
+(function () {
+  var LINES = {};
+  (window.EKIMEI_LINES || []).forEach(function (l) {
+    LINES[l.id] = { name: l.name, ch: l.ch, pre: l.pre, color: l.color, loop: l.loop, start: l.start, st: l.stations };
+  });
+  LINES.custom = { name: "Custom", ch: "", pre: "", color: "#80c241", loop: false, start: 0, st: [] };
+
+  var DEF = {
+    line: "yamanote", idx: 19, dir: -1, adv: 0, theme: "auto", clock: "24", awake: true,
+    custom: { ch: "山", pre: "JY", num: "20", color: "#80c241", k: "渋谷", h: "しぶや", r: "Shibuya", pk: "恵比寿", pr: "Ebisu", nk: "原宿", nr: "Harajuku" }
+  };
+  var S = JSON.parse(JSON.stringify(DEF));
+  try { var saved = JSON.parse(localStorage.getItem("jrSign") || "null"); if (saved) { for (var key in saved) S[key] = saved[key]; S.custom = Object.assign({}, DEF.custom, saved.custom || {}); } } catch (e) {}
+  function save() { try { localStorage.setItem("jrSign", JSON.stringify(S)); } catch (e) {} }
+
+  var $ = function (id) { return document.getElementById(id); };
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+
+  function neighbour(line, i, step) {
+    var n = line.st.length, j = i + step;
+    if (line.loop) return line.st[(j % n + n) % n];
+    return line.st[j] || null;
+  }
+
+  function fit(el, base, perChar, len, mult) {
+    el.style.setProperty(base.prop, Math.min(base.max, perChar / Math.max(1, len * mult)).toFixed(2));
+  }
+
+  function render() {
+    var L = LINES[S.line] || LINES.yamanote, cur, prev, next, ch, pre, num, color;
+    if (S.line === "custom") {
+      var c = S.custom;
+      cur = [c.k, c.h, c.r]; prev = c.pk ? [c.pk, "", c.pr] : null; next = c.nk ? [c.nk, "", c.nr] : null;
+      if (S.dir > 0) { var t = prev; prev = next; next = t; }
+      ch = c.ch; pre = c.pre; num = c.num; color = c.color;
+    } else {
+      S.idx = Math.max(0, Math.min(L.st.length - 1, S.idx));
+      cur = L.st[S.idx]; next = neighbour(L, S.idx, S.dir); prev = neighbour(L, S.idx, -S.dir);
+      ch = L.ch; pre = L.pre; num = cur[3]; color = L.color;
+    }
+    document.documentElement.style.setProperty("--band", color);
+
+    $("kanji").textContent = cur[0];
+    $("kana").textContent = cur[1];
+    $("romaji").textContent = cur[2];
+    $("kanji").style.setProperty("--k", Math.min(14, 62 / Math.max(1, cur[0].length)).toFixed(2));
+    $("kana").style.setProperty("--h", Math.min(4.5, 62 / Math.max(1, cur[1].length * 1.2)).toFixed(2));
+    $("romaji").style.setProperty("--r", Math.min(7.5, 88 / Math.max(1, cur[2].length * 0.62)).toFixed(2));
+    $("kana").hidden = !cur[1];
+
+    $("lk").textContent = prev ? prev[0] : ""; $("ll").textContent = prev ? prev[2] : "";
+    $("rk").textContent = next ? next[0] : ""; $("rl").textContent = next ? next[2] : "";
+
+    $("lineChar").textContent = ch; $("lineChar").hidden = !ch;
+    $("codeLine").textContent = pre; $("codeNum").textContent = num; $("codeMark").hidden = !(pre || num);
+    document.title = "Ekimei";
+  }
+
+  /* clock */
+  function tick() {
+    var d = new Date(), h = d.getHours(), m = d.getMinutes();
+    if (S.clock === "12") { $("ampm").textContent = h >= 12 ? "PM" : "AM"; h = h % 12 || 12; $("time").textContent = h + ":" + pad(m); }
+    else { $("ampm").textContent = ""; $("time").textContent = pad(h) + ":" + pad(m); }
+  }
+  setInterval(tick, 1000);
+
+  /* ride mode */
+  var advTimer = null;
+  function setAdvance() {
+    clearInterval(advTimer);
+    var mins = +S.adv;
+    if (mins > 0 && S.line !== "custom") {
+      advTimer = setInterval(function () {
+        var L = LINES[S.line], n = L.st.length, j = S.idx + S.dir;
+        if (L.loop) j = (j % n + n) % n;
+        else if (j < 0 || j >= n) { S.dir = -S.dir; j = S.idx + S.dir; }
+        S.idx = j; save(); render(); fillStations();
+      }, mins * 60000);
+    }
+  }
+
+  /* settings */
+  function fillLines() {
+    var sel = $("lineSel"); sel.textContent = "";
+    Object.keys(LINES).forEach(function (k) { var o = document.createElement("option"); o.value = k; o.textContent = LINES[k].name; sel.appendChild(o); });
+    sel.value = S.line;
+  }
+  function fillStations() {
+    var sel = $("stSel"), L = LINES[S.line]; sel.textContent = "";
+    L.st.forEach(function (s, i) { var o = document.createElement("option"); o.value = i; o.textContent = L.pre + s[3] + "  " + s[0] + "  " + s[2]; sel.appendChild(o); });
+    sel.value = S.idx; sel.disabled = S.line === "custom";
+    $("customBox").hidden = S.line !== "custom";
+  }
+  function seg(id, key, cb) {
+    var box = $(id);
+    function mark() { Array.prototype.forEach.call(box.children, function (b) { b.setAttribute("aria-pressed", String(b.dataset.v === S[key])); }); }
+    box.addEventListener("click", function (e) { var b = e.target.closest("button"); if (!b) return; S[key] = b.dataset.v; mark(); save(); cb(); });
+    mark();
+  }
+  function applyTheme() {
+    var r = document.documentElement;
+    if (S.theme === "auto") r.removeAttribute("data-theme"); else r.setAttribute("data-theme", S.theme);
+  }
+
+  var cmap = { cLine: "ch", cPre: "pre", cNum: "num", cCol: "color", cK: "k", cH: "h", cR: "r", pK: "pk", pR: "pr", nK: "nk", nR: "nr" };
+  Object.keys(cmap).forEach(function (id) {
+    $(id).value = S.custom[cmap[id]] || "";
+    $(id).addEventListener("input", function () { S.custom[cmap[id]] = $(id).value; save(); render(); });
+  });
+
+  $("lineSel").addEventListener("change", function () { S.line = this.value; S.idx = LINES[S.line].start || 0; save(); fillStations(); render(); setAdvance(); });
+  $("stSel").addEventListener("change", function () { S.idx = +this.value; save(); render(); });
+  $("swapBtn").addEventListener("click", function () { S.dir = -S.dir; save(); render(); });
+  $("advSel").addEventListener("change", function () { S.adv = +this.value; save(); setAdvance(); });
+  seg("themeSeg", "theme", applyTheme);
+  seg("clockSeg", "clock", tick);
+
+  /* keep awake */
+  var lock = null;
+  function wake() {
+    try {
+      if (!S.awake) { if (lock) { lock.release(); lock = null; } return; }
+      if (navigator.wakeLock && document.visibilityState === "visible") {
+        navigator.wakeLock.request("screen").then(function (l) { lock = l; l.addEventListener("release", function () { lock = null; }); }, function () {});
+      }
+    } catch (e) {}
+  }
+  $("awake").checked = !!S.awake;
+  $("awake").addEventListener("change", function () { S.awake = this.checked; save(); wake(); });
+  document.addEventListener("visibilitychange", wake);
+
+  /* sheet open / close */
+  var sheet = $("sheet"), sign = $("sign");
+  function openSheet() { sheet.hidden = false; $("hint").classList.add("gone"); $("closeBtn").focus(); }
+  function closeSheet() { sheet.hidden = true; sign.focus(); }
+  sign.addEventListener("click", function () { sheet.hidden ? openSheet() : closeSheet(); });
+  sign.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openSheet(); } });
+  $("closeBtn").addEventListener("click", closeSheet);
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !sheet.hidden) closeSheet(); });
+  setTimeout(function () { $("hint").classList.add("gone"); }, 5000);
+
+  applyTheme(); fillLines(); fillStations(); $("advSel").value = String(S.adv); render(); tick(); setAdvance(); wake();
+})();
+</script>
