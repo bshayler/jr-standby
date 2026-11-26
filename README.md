@@ -23,8 +23,12 @@ All data lives in `data/lines.json` and is shared by the web page and the iOS ta
 | Chūō-Sōbu 中央・総武線 | JB | JB01 Mitaka to JB39 Chiba |
 | Saikyō 埼京線 | JA | JA08 Osaki to JA15 Akabane |
 | Tōkaidō 東海道線 | JT | JT01 Tokyo to JT16 Odawara |
+| Osaka Loop 大阪環状線 | O | O01 Tennoji to O19 Shin-Imamiya (loop) |
+| JR Kyōto / Kōbe 京都線・神戸線 | A | A31 Kyoto to A85 Himeji |
+| Yamatoji 大和路線 | Q | Q17 JR Namba to Q39 Kamo (Q35 is unused) |
+| Hanwa 阪和線 | R | R20 Tennoji to R54 Wakayama |
 
-The station numbers were written from memory. Check them against JR East's published line maps before relying on them, and fix `data/lines.json` if one is off. To add a line, append an entry in the same format (`[kanji, kana, romaji, number]` per station), then run `python3 tools/build.py`.
+The JR East station numbers (Yamanote to Tōkaidō) were written from memory. Check them against JR East's published line maps before relying on them. The Kansai lines (Osaka Loop, Kyōto / Kōbe, Yamatoji, Hanwa) take their station numbers and kanji from Wikipedia's station tables, and the readings and colours are added by hand. Fix `data/lines.json` if anything is off. To add a line, append an entry in the same format (`[kanji, kana, romaji, number]` per station), then run `python3 tools/build.py`.
 
 ## Web
 
