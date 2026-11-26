@@ -28,7 +28,7 @@ All data lives in `data/lines.json` and is shared by the web page and the iOS ta
 | Yamatoji 大和路線 | Q | Q17 JR Namba to Q39 Kamo (Q35 is unused) |
 | Hanwa 阪和線 | R | R20 Tennoji to R54 Wakayama |
 
-The JR East station numbers (Yamanote to Tōkaidō) were written from memory. Check them against JR East's published line maps before relying on them. The Kansai lines (Osaka Loop, Kyōto / Kōbe, Yamatoji, Hanwa) take their station numbers and kanji from Wikipedia's station tables, and the readings and colours are added by hand. Fix `data/lines.json` if anything is off. To add a line, append an entry in the same format (`[kanji, kana, romaji, number]` per station), then run `python3 tools/build.py`.
+Station numbers and kanji for every line were checked against the station tables on English Wikipedia (JR East lines on 2026-11-26, Kansai lines the same day). The hiragana readings and line colours were added by hand and have not been checked. Fix `data/lines.json` if anything is off. To add a line, append an entry in the same format (`[kanji, kana, romaji, number]` per station), then run `python3 tools/build.py`.
 
 ## Web
 
